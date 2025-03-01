@@ -67,8 +67,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let log = get_log().await?;
     let requests = parse_log_strings(&log)?;
     for req in requests {
-        let claims = validate_token(&req.jwt)?;
-        println!("{:?}", claims);
+        let claim = validate_token(&req.jwt)?;
+        println!(
+            "- {} {} [ {} {} ]",
+            req.timestamp, req.path, claim.sub, claim.custom_claim
+        );
     }
     Ok(())
 }
