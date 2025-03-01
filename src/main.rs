@@ -25,10 +25,9 @@ const AUDIENCE: &str = "docportal";
 
 /// Get logfile by HTTP-request.
 async fn get_log() -> Result<String, reqwest::Error> {
-    return reqwest::get("http://localhost:8000/log-sample.log")
-        .await?
-        .text()
-        .await;
+    let url = "http://localhost:8000/log-sample.log";
+    println!("Get log file from {}", url);
+    return reqwest::get(url).await?.text().await;
 }
 
 /// Parse log file strings into JWT head requests.
