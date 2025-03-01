@@ -1,0 +1,17 @@
+[package]
+name = "jwt-log-parser"
+version = "0.1.0"
+authors = ["Dabe Vlohn <tar@tara.bar>"]
+description = "Parser for HTTP-server logs including tracker requests"
+license = "MIT"
+repository = "https://github.com/dabevlohn/jwt-log-parser"
+readme = "README.md"
+edition = "2024"
+
+[dependencies]
+chrono = "0.4.38"
+regex = "1.10.6"
+jsonwebtoken = "9.3.1"
+reqwest = "0.12.12"
+serde = { version = "1.0.218", features = ["derive"] }
+tokio = { version = "1.43.0", features = ["macros", "rt-multi-thread"] }
