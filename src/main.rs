@@ -1,3 +1,4 @@
+use duckdb::{Connection, Result};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 
@@ -63,14 +64,54 @@ fn validate_token(token: &str) -> Result<Claims, jsonwebtoken::errors::Error> {
 /// Main.
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    use std::time::Instant;
+    let now = Instant::now();
+
     let log = get_log().await?;
+
+    let mut elapsed = now.elapsed();
+    println!("1Gb log is downloaded. Elapsed: {:.2?}", elapsed);
+
     let requests = parse_log_strings(&log)?;
+
+    elapsed = now.elapsed();
+    println!("Requests are parsed. Elapsed: {:.2?}", elapsed);
+
+    let conn = Connection::open_in_memory()?;
+    conn.execute_batch(
+        r"CREATE TABLE logrecords (
+              timestamp VARCHAR,
+              path VARCHAR,
+              userid VARCHAR
+        );",
+    )?;
+
+    let mut app = conn.appender("logrecords")?;
+
     for req in requests {
         let claim = validate_token(&req.jwt)?;
-        println!(
-            "- {} {} [ {} {} ]",
-            req.timestamp, req.path, claim.sub, claim.custom_claim
-        );
+        //let record = format!(
+        //    "{} {} {} {}\n",
+        //    req.timestamp, req.path, claim.sub, claim.custom_claim
+        //);
+        if req.path == claim.sub {
+            app.append_row([req.timestamp, req.path, claim.custom_claim])?;
+        }
     }
+
+    app.flush();
+    conn.execute_batch(
+        r"COPY (SELECT * FROM logrecords)
+                TO 'logrecords.parquet'
+                (FORMAT PARQUET, COMPRESSION ZSTD);
+                ",
+    )?;
+
+    elapsed = now.elapsed();
+    println!(
+        "Validated claims are written to the parquet file. Elapsed: {:.2?}",
+        elapsed
+    );
+
     Ok(())
 }
